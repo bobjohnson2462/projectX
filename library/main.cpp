@@ -5,6 +5,7 @@
 
 #include "Book.h"
 #include "BookCatalog.h"
+#include "LibrarySystem.h"
 
 std::string genreToString(Genre g) {
     switch (g) {
@@ -18,22 +19,22 @@ std::string genreToString(Genre g) {
 
 void printBook(const Book& b) {
     std::cout << "ID: " << b.id
-              << " | Автор: " << b.author
-              << " | Название: " << b.title
-              << " | Год: " << b.year
-              << " | Жанр: " << genreToString(b.genre)
-              << " | Всего экз.: " << b.totalCopies
-              << " | Доступно: " << b.availableCopies
+              << " | Author: " << b.author
+              << " | Title: " << b.title
+              << " | Year: " << b.year
+              << " | Genre: " << genreToString(b.genre)
+              << " | Total copies: " << b.totalCopies
+              << " | Available: " << b.availableCopies
               << '\n';
 }
 
 Genre askGenre() {
-    std::cout << "Выберите жанр:\n";
+    std::cout << "Choose genre:\n";
     std::cout << "1 - Fiction\n";
     std::cout << "2 - Science\n";
     std::cout << "3 - Fantasy\n";
     std::cout << "4 - Detective\n";
-    std::cout << "Ваш выбор: ";
+    std::cout << "Your choice: ";
 
     int choice = 0;
     std::cin >> choice;
@@ -43,7 +44,7 @@ Genre askGenre() {
     case 3: return Genre::Fantasy;
     case 4: return Genre::Detective;
     default:
-        std::cout << "Неизвестный выбор, будет использован Fiction.\n";
+        std::cout << "Unknown choice, using Fiction.\n";
         return Genre::Fiction;
     }
 }
@@ -56,32 +57,32 @@ void addBookInteractive(BookCatalog& catalog) {
     int year = 0;
     int copies = 0;
 
-    std::cout << "Автор: ";
+    std::cout << "Author: ";
     std::getline(std::cin, author);
 
-    std::cout << "Название: ";
+    std::cout << "Title: ";
     std::getline(std::cin, title);
 
-    std::cout << "Год издания: ";
+    std::cout << "Publication year: ";
     std::cin >> year;
 
     Genre genre = askGenre();
 
-    std::cout << "Количество экземпляров: ";
+    std::cout << "Number of copies: ";
     std::cin >> copies;
 
     std::string error;
     int id = catalog.addOrMergeBook(author, title, year, genre, copies, &error);
     if (id < 0) {
-        std::cout << "Ошибка при добавлении книги: " << error << "\n";
+        std::cout << "Error while adding book: " << error << "\n";
     } else {
-        std::cout << "Книга успешно добавлена/объединена, ID = " << id << "\n";
+        std::cout << "Book added/merged, ID = " << id << "\n";
     }
 }
 
 void listAllBooks(const std::vector<Book>& books) {
     if (books.empty()) {
-        std::cout << "Каталог пуст.\n";
+        std::cout << "Catalog is empty.\n";
         return;
     }
     for (const auto& b : books) {
@@ -92,16 +93,16 @@ void listAllBooks(const std::vector<Book>& books) {
 void searchByAuthorInteractive(const BookCatalog& catalog) {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::string query;
-    std::cout << "Введите часть имени автора: ";
+    std::cout << "Enter part of author name: ";
     std::getline(std::cin, query);
 
     auto results = catalog.searchByAuthor(query);
     if (results.empty()) {
-        std::cout << "Книги не найдены.\n";
+        std::cout << "No books found.\n";
         return;
     }
 
-    std::cout << "Найдено книг: " << results.size() << "\n";
+    std::cout << "Books found: " << results.size() << "\n";
     for (const Book* b : results) {
         if (b) printBook(*b);
     }
@@ -110,41 +111,171 @@ void searchByAuthorInteractive(const BookCatalog& catalog) {
 void searchByTitleInteractive(const BookCatalog& catalog) {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::string query;
-    std::cout << "Введите часть названия книги: ";
+    std::cout << "Enter part of book title: ";
     std::getline(std::cin, query);
 
     auto results = catalog.searchByTitle(query);
     if (results.empty()) {
-        std::cout << "Книги не найдены.\n";
+        std::cout << "No books found.\n";
         return;
     }
 
-    std::cout << "Найдено книг: " << results.size() << "\n";
+    std::cout << "Books found: " << results.size() << "\n";
     for (const Book* b : results) {
         if (b) printBook(*b);
+    }
+}
+
+void registerReaderInteractive(LibrarySystem& lib) {
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::string fullName;
+    std::string contact;
+    std::string regDate;
+
+    std::cout << "Reader full name: ";
+    std::getline(std::cin, fullName);
+
+    std::cout << "Contacts (phone/email): ";
+    std::getline(std::cin, contact);
+
+    std::cout << "Registration date (YYYY-MM-DD): ";
+    std::getline(std::cin, regDate);
+
+    int id = lib.registerReader(fullName, contact, regDate);
+    std::cout << "Reader registered, ID = " << id << "\n";
+}
+
+void listReaders(const LibrarySystem& lib) {
+    if (lib.readers.empty()) {
+        std::cout << "No readers.\n";
+        return;
+    }
+    for (const auto& r : lib.readers) {
+        std::cout << "ID: " << r.id
+                  << " | Name: " << r.fullName
+                  << " | Contacts: " << r.contact
+                  << " | Registration date: " << r.registrationDate
+                  << " | Total fine: " << r.totalFine
+                  << "\n";
+    }
+}
+
+void listLoans(const LibrarySystem& lib) {
+    if (lib.loans.empty()) {
+        std::cout << "No loans yet.\n";
+        return;
+    }
+    for (const auto& l : lib.loans) {
+        std::cout << "Loan ID: " << l.id
+                  << " | Book ID: " << l.bookId
+                  << " | Reader ID: " << l.readerId
+                  << " | Issue date: " << l.issueDate
+                  << " | Due date: " << l.dueDate
+                  << " | Returned: " << (l.isReturned ? "yes" : "no")
+                  << " | Fine: " << l.fine
+                  << "\n";
+    }
+}
+
+void issueBookInteractive(LibrarySystem& lib) {
+    int bookId = 0;
+    int readerId = 0;
+    std::string issueDate;
+
+    std::cout << "Book ID: ";
+    std::cin >> bookId;
+    std::cout << "Reader ID: ";
+    std::cin >> readerId;
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cout << "Issue date (YYYY-MM-DD): ";
+    std::getline(std::cin, issueDate);
+
+    std::string error;
+    int loanId = lib.issueBook(bookId, readerId, issueDate, &error);
+    if (loanId < 0) {
+        std::cout << "Error issuing book: " << error << "\n";
+    } else {
+        std::cout << "Book issued, loan ID = " << loanId << "\n";
+    }
+}
+
+void returnBookInteractive(LibrarySystem& lib) {
+    int loanId = 0;
+    std::string returnDate;
+    int damagedFlag = 0;
+
+    std::cout << "Loan ID: ";
+    std::cin >> loanId;
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cout << "Return date (YYYY-MM-DD): ";
+    std::getline(std::cin, returnDate);
+
+    std::cout << "Book damaged? (1 - yes, 0 - no): ";
+    std::cin >> damagedFlag;
+
+    bool damaged = (damagedFlag == 1);
+
+    std::string error;
+    if (!lib.returnBook(loanId, returnDate, damaged, &error)) {
+        std::cout << "Error returning book: " << error << "\n";
+    } else {
+        std::cout << "Book successfully returned.\n";
+    }
+}
+
+void reserveBookInteractive(LibrarySystem& lib) {
+    int bookId = 0;
+    int readerId = 0;
+    std::string date;
+
+    std::cout << "Book ID: ";
+    std::cin >> bookId;
+    std::cout << "Reader ID: ";
+    std::cin >> readerId;
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cout << "Reservation date (YYYY-MM-DD): ";
+    std::getline(std::cin, date);
+
+    std::string error;
+    int resId = lib.reserveBook(bookId, readerId, date, &error);
+    if (resId < 0) {
+        std::cout << "Error reserving book: " << error << "\n";
+    } else {
+        std::cout << "Reservation created, ID = " << resId << "\n";
     }
 }
 
 int main() {
     std::setlocale(LC_ALL, "");
 
-    std::vector<Book> books;
-    BookCatalog catalog(books);
+    LibrarySystem library;
+    BookCatalog catalog(library.books);
+    library.attachCatalog(&catalog);
 
     while (true) {
-        std::cout << "\n=== Меню каталога книг ===\n";
-        std::cout << "1 - Добавить книгу\n";
-        std::cout << "2 - Показать все книги\n";
-        std::cout << "3 - Поиск по автору\n";
-        std::cout << "4 - Поиск по названию\n";
-        std::cout << "0 - Выход\n";
-        std::cout << "Ваш выбор: ";
+        std::cout << "\n=== Library menu ===\n";
+        std::cout << "1 - Add book\n";
+        std::cout << "2 - List all books\n";
+        std::cout << "3 - Search by author\n";
+        std::cout << "4 - Search by title\n";
+        std::cout << "5 - Register reader\n";
+        std::cout << "6 - List readers\n";
+        std::cout << "7 - Issue book\n";
+        std::cout << "8 - Return book\n";
+        std::cout << "9 - Reserve book\n";
+        std::cout << "10 - List loans\n";
+        std::cout << "0 - Exit\n";
+        std::cout << "Your choice: ";
 
         int cmd = 0;
         std::cin >> cmd;
 
         if (!std::cin) {
-            std::cout << "Ошибка ввода, завершение.\n";
+            std::cout << "Input error, exiting.\n";
             break;
         }
 
@@ -153,7 +284,7 @@ int main() {
             addBookInteractive(catalog);
             break;
         case 2:
-            listAllBooks(books);
+            listAllBooks(library.books);
             break;
         case 3:
             searchByAuthorInteractive(catalog);
@@ -161,15 +292,34 @@ int main() {
         case 4:
             searchByTitleInteractive(catalog);
             break;
+        case 5:
+            registerReaderInteractive(library);
+            break;
+        case 6:
+            listReaders(library);
+            break;
+        case 7:
+            issueBookInteractive(library);
+            break;
+        case 8:
+            returnBookInteractive(library);
+            break;
+        case 9:
+            reserveBookInteractive(library);
+            break;
+        case 10:
+            listLoans(library);
+            break;
         case 0:
-            std::cout << "Выход.\n";
+            std::cout << "Exit.\n";
             return 0;
         default:
-            std::cout << "Неизвестная команда.\n";
+            std::cout << "Unknown command.\n";
             break;
         }
     }
 
     return 0;
 }
+
 
