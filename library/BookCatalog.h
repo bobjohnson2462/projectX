@@ -1,4 +1,4 @@
-#pragma once
+pragma once
 
 #include <algorithm>
 #include <cctype>
@@ -11,7 +11,7 @@ public:
     explicit BookCatalog(std::vector<Book>& books)
         : books_(books) {}
 
-
+    
     int addOrMergeBook(const std::string& author,
                        const std::string& title,
                        int year,
@@ -19,11 +19,11 @@ public:
                        int copiesToAdd,
                        std::string* error = nullptr) {
         if (copiesToAdd <= 0) {
-            if (error) *error = "Íåëüçÿ äîáàâëÿòü 0 èëè îòðèöàòåëüíîå ÷èñëî ýêçåìïëÿðîâ.";
+            if (error) *error = "Cannot add zero or negative number of copies.";
             return -1;
         }
         if (year <= 0) {
-            if (error) *error = "Ãîä èçäàíèÿ äîëæåí áûòü ïîëîæèòåëüíûì.";
+            if (error) *error = "Publication year must be positive.";
             return -1;
         }
 
@@ -83,7 +83,7 @@ private:
         if (sub.empty()) return true;
         if (!ignoreCaseAscii) return text.find(sub) != std::string::npos;
 
-       
+        
         const std::string t = toLowerAscii(text);
         const std::string s = toLowerAscii(sub);
         return t.find(s) != std::string::npos;
@@ -115,6 +115,5 @@ private:
             if (b.id > maxId) maxId = b.id;
         }
         return maxId + 1;
-    }
-};
+
 
