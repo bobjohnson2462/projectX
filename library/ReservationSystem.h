@@ -18,12 +18,10 @@ public:
     std::vector<const Reservation*> getActiveReservations() const;
 
    
-    std::vector<const Reservation*> getReservationsByBook(int bookId,
-                                                          bool onlyActive = false) const;
+    std::vector<const Reservation*> getReservationsByBook(int bookId, bool onlyActive = false) const;
 
    
-    std::vector<const Reservation*> getReservationsByReader(int readerId,
-                                                            bool onlyActive = false) const;
+    std::vector<const Reservation*> getReservationsByReader(int readerId, bool onlyActive = false) const;
 
     
     int countActiveForBook(int bookId) const;
@@ -33,4 +31,5 @@ public:
 private:
     LibrarySystem& library_;
 };
+
 
