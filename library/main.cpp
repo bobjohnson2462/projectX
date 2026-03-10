@@ -6,6 +6,7 @@
 #include "Book.h"
 #include "BookCatalog.h"
 #include "LibrarySystem.h"
+#include "ReservationSystem.h"
 
 std::string genreToString(Genre g) {
     switch (g) {
@@ -249,12 +250,46 @@ void reserveBookInteractive(LibrarySystem& lib) {
     }
 }
 
+void printReservation(const Reservation& r) {
+    std::cout << "Reservation ID: " << r.id
+              << " | Book ID: " << r.bookId
+              << " | Reader ID: " << r.readerId
+              << " | Created at: " << r.createdAt
+              << " | Active: " << (r.isActive ? "yes" : "no")
+              << "\n";
+}
+
+void listReservationsInteractive(const ReservationSystem& rs, bool onlyActive) {
+    const auto list = onlyActive ? rs.getActiveReservations() : rs.getAllReservations();
+    if (list.empty()) {
+        std::cout << (onlyActive ? "No active reservations.\n" : "No reservations.\n");
+        return;
+    }
+    for (const Reservation* r : list) {
+        if (r) printReservation(*r);
+    }
+}
+
+void cancelReservationInteractive(ReservationSystem& rs) {
+    int reservationId = 0;
+    std::cout << "Reservation ID: ";
+    std::cin >> reservationId;
+
+    std::string error;
+    if (!rs.cancelReservation(reservationId, &error)) {
+        std::cout << "Error cancelling reservation: " << error << "\n"; // "ЭХ АТЫ БАТЫ" Борис Моисеев 
+    } else {
+        std::cout << "Reservation cancelled.\n";
+    }
+}
+
 int main() {
     std::setlocale(LC_ALL, "");
 
     LibrarySystem library;
     BookCatalog catalog(library.books);
     library.attachCatalog(&catalog);
+    ReservationSystem reservationSystem(library);
 
     while (true) {
         std::cout << "\n=== Library menu ===\n";
@@ -268,6 +303,9 @@ int main() {
         std::cout << "8 - Return book\n";
         std::cout << "9 - Reserve book\n";
         std::cout << "10 - List loans\n";
+        std::cout << "11 - List reservations\n";
+        std::cout << "12 - List active reservations\n";
+        std::cout << "13 - Cancel reservation\n";
         std::cout << "0 - Exit\n";
         std::cout << "Your choice: ";
 
@@ -310,6 +348,15 @@ int main() {
         case 10:
             listLoans(library);
             break;
+        case 11:
+            listReservationsInteractive(reservationSystem, false);
+            break;
+        case 12:
+            listReservationsInteractive(reservationSystem, true);
+            break;
+        case 13:
+            cancelReservationInteractive(reservationSystem);
+            break;
         case 0:
             std::cout << "Exit.\n";
             return 0;
@@ -321,5 +368,4 @@ int main() {
 
     return 0;
 }
-
 
