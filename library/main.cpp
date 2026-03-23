@@ -2,11 +2,14 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <fstream>
+#include <sstream>
 
 #include "Book.h"
 #include "BookCatalog.h"
 #include "LibrarySystem.h"
 #include "ReservationSystem.h"
+#include "FineSystem.h"
 
 std::string genreToString(Genre g) {
     switch (g) {
@@ -16,6 +19,90 @@ std::string genreToString(Genre g) {
     case Genre::Detective: return "Detective";
     default:               return "Unknown";
     }
+}
+
+Genre genreFromString(const std::string& s) {
+    if (s == "Fiction") return Genre::Fiction;
+    if (s == "Science") return Genre::Science;
+    if (s == "Fantasy") return Genre::Fantasy;
+    if (s == "Detective") return Genre::Detective;
+    return Genre::Fiction;
+}
+
+bool loadBooksFromCsv(const std::string& path, std::vector<Book>& books) {
+    std::ifstream in(path);
+    if (!in.is_open()) {
+        return false;
+    }
+
+    books.clear();
+
+    std::string line;
+    if (!std::getline(in, line)) {
+        return true; // empty file
+    }
+
+    // Expected columns:
+    // book_id,title,author,year,genre,price,total_copies,available_copies
+    while (std::getline(in, line)) {
+        if (line.empty()) continue;
+
+        std::stringstream ss(line);
+        std::vector<std::string> cols;
+        std::string cell;
+        while (std::getline(ss, cell, ',')) {
+            cols.push_back(cell);
+        }
+
+        if (cols.size() < 8) {
+            continue; // skip broken line
+        }
+
+        try {
+            const int id = std::stoi(cols[0]);
+            const std::string title = cols[1];
+            const std::string author = cols[2];
+            const int year = std::stoi(cols[3]);
+            const Genre genre = genreFromString(cols[4]);
+            const int totalCopies = std::stoi(cols[6]);
+            int availableCopies = std::stoi(cols[7]);
+
+            if (totalCopies < 0) continue;
+            if (availableCopies < 0) availableCopies = 0;
+            if (availableCopies > totalCopies) availableCopies = totalCopies;
+
+            books.emplace_back(id, author, title, year, genre, totalCopies);
+            books.back().availableCopies = availableCopies;
+        } catch (...) {
+            // Skip invalid row silently.
+            continue;
+        }
+    }
+
+    return true;
+}
+
+bool saveBooksToCsv(const std::string& path, const std::vector<Book>& books) {
+    std::ofstream out(path, std::ios::trunc);
+    if (!out.is_open()) {
+        return false;
+    }
+
+    out << "book_id,title,author,year,genre,price,total_copies,available_copies\n";
+    for (const auto& b : books) {
+        // price is not yet stored in Book model, keep placeholder 0.00
+        out << b.id << ','
+            << b.title << ','
+            << b.author << ','
+            << b.year << ','
+            << genreToString(b.genre) << ','
+            << "0.00,"
+            << b.totalCopies << ','
+            << b.availableCopies
+            << '\n';
+    }
+
+    return true;
 }
 
 void printBook(const Book& b) {
@@ -283,13 +370,53 @@ void cancelReservationInteractive(ReservationSystem& rs) {
     }
 }
 
+void printDebtor(const Reader& r) {
+    std::cout << "Reader ID: " << r.id
+              << " | Name: " << r.fullName
+              << " | Total fine: " << r.totalFine
+              << "\n";
+}
+
+void listDebtorsInteractive(const FineSystem& fs, double minDebt) {
+    const auto debtors = fs.getDebtors(minDebt);
+    if (debtors.empty()) {
+        std::cout << "No debtors.\n";
+        return;
+    }
+    for (const Reader* r : debtors) {
+        if (r) printDebtor(*r);
+    }
+}
+
+void showTotalDebtInteractive(const FineSystem& fs) {
+    std::cout << "Total debt of all readers: " << fs.getTotalDebt() << "\n";
+}
+
+void payDebtInteractive(FineSystem& fs) {
+    int readerId = 0;
+    double amount = 0.0;
+    std::cout << "Reader ID: ";
+    std::cin >> readerId;
+    std::cout << "Payment amount: ";
+    std::cin >> amount;
+
+    std::string error;
+    if (!fs.payDebt(readerId, amount, &error)) {
+        std::cout << "Error paying debt: " << error << "\n";
+    } else {
+        std::cout << "Debt payment applied.\n";
+    }
+}
+
 int main() {
     std::setlocale(LC_ALL, "");
 
     LibrarySystem library;
+    loadBooksFromCsv("base.csv", library.books);
     BookCatalog catalog(library.books);
     library.attachCatalog(&catalog);
     ReservationSystem reservationSystem(library);
+    FineSystem fineSystem(library);
 
     while (true) {
         std::cout << "\n=== Library menu ===\n";
@@ -306,6 +433,9 @@ int main() {
         std::cout << "11 - List reservations\n";
         std::cout << "12 - List active reservations\n";
         std::cout << "13 - Cancel reservation\n";
+        std::cout << "14 - List debtors\n";
+        std::cout << "15 - Show total debt\n";
+        std::cout << "16 - Pay reader debt\n";
         std::cout << "0 - Exit\n";
         std::cout << "Your choice: ";
 
@@ -357,7 +487,17 @@ int main() {
         case 13:
             cancelReservationInteractive(reservationSystem);
             break;
+        case 14:
+            listDebtorsInteractive(fineSystem, 0.01);
+            break;
+        case 15:
+            showTotalDebtInteractive(fineSystem);
+            break;
+        case 16:
+            payDebtInteractive(fineSystem);
+            break;
         case 0:
+            saveBooksToCsv("base.csv", library.books);
             std::cout << "Exit.\n";
             return 0;
         default:
@@ -366,6 +506,7 @@ int main() {
         }
     }
 
+    saveBooksToCsv("base.csv", library.books);
     return 0;
 }
 
