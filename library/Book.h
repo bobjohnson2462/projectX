@@ -1,5 +1,7 @@
+#pragma once
+
 #include <string>
-#include <vector>
+
 
 
 enum class Genre {
@@ -7,19 +9,18 @@ enum class Genre {
     Science,      
     Fantasy,
     Detective,
-    
 };
 
 class Book {
 public:
-    int id;                   
+    int id;                  
     std::string author;
     std::string title;
     int year;
     Genre genre;
 
     int totalCopies;          
-    int availableCopies;    
+    int availableCopies;      
 
     Book(int id,
          const std::string& author,
@@ -98,15 +99,15 @@ public:
 class Loan {
 public:
     int id;                     
-    int bookId;                
-    int readerId;               
+    int bookId;                 
+    int readerId;             
 
     std::string issueDate;      
     std::string dueDate;        
     std::string returnDate;     
 
-    bool isReturned;            
-    double fine;                
+    bool isReturned;           
+    double fine;               
 
     Loan(int id,
          int bookId,
@@ -140,16 +141,15 @@ public:
 };
 
 
-
 class Reservation {
 public:
     int id;                 
     int bookId;             
     int readerId;           
 
-    std::string createdAt;  
-    bool isActive;          
-
+    std::string createdAt; 
+    bool isActive;      
+        
     Reservation(int id,
                 int bookId,
                 int readerId,
@@ -170,35 +170,4 @@ public:
     }
 };
 
-
-
-class BookCatalog; 
-
-class LibrarySystem {
-public:
-    std::vector<Book> books;
-    BookCatalog* catalog;           
-    std::vector<Reader> readers;
-    std::vector<Loan> loans;
-    std::vector<Reservation> reservations;
-
-    LibrarySystem()
-        : books{},
-          catalog(nullptr),
-          readers{},
-          loans{},
-          reservations{} {}
-
-    void attachCatalog(BookCatalog* c) {
-        catalog = c;
-    }
-
-    void addBook(const Book& book) {
-        books.push_back(book);
-    }
-
-    void addReader(const Reader& reader) {
-        readers.push_back(reader);
-    }
-};
 
