@@ -10,6 +10,7 @@
 #include "LibrarySystem.h"
 #include "ReservationSystem.h"
 #include "FineSystem.h"
+#include "ReportSystem.h"
 
 std::string genreToString(Genre g) {
     switch (g) {
@@ -39,11 +40,9 @@ bool loadBooksFromCsv(const std::string& path, std::vector<Book>& books) {
 
     std::string line;
     if (!std::getline(in, line)) {
-        return true; // empty file
+        return true; 
     }
 
-    // Expected columns:
-    // book_id,title,author,year,genre,price,total_copies,available_copies
     while (std::getline(in, line)) {
         if (line.empty()) continue;
 
@@ -55,7 +54,7 @@ bool loadBooksFromCsv(const std::string& path, std::vector<Book>& books) {
         }
 
         if (cols.size() < 8) {
-            continue; // skip broken line
+            continue; 
         }
 
         try {
@@ -74,7 +73,6 @@ bool loadBooksFromCsv(const std::string& path, std::vector<Book>& books) {
             books.emplace_back(id, author, title, year, genre, totalCopies);
             books.back().availableCopies = availableCopies;
         } catch (...) {
-            // Skip invalid row silently.
             continue;
         }
     }
@@ -90,7 +88,6 @@ bool saveBooksToCsv(const std::string& path, const std::vector<Book>& books) {
 
     out << "book_id,title,author,year,genre,price,total_copies,available_copies\n";
     for (const auto& b : books) {
-        // price is not yet stored in Book model, keep placeholder 0.00
         out << b.id << ','
             << b.title << ','
             << b.author << ','
@@ -408,6 +405,47 @@ void payDebtInteractive(FineSystem& fs) {
     }
 }
 
+void showPopularBooksReportInteractive(const ReportSystem& rs) {
+    const auto items = rs.getPopularBooks(10);
+    if (items.empty()) {
+        std::cout << "No book issue statistics yet.\n";
+        return;
+    }
+    for (const auto& it : items) {
+        std::cout << "Book ID: " << it.bookId
+                  << " | Title: " << it.title
+                  << " | Author: " << it.author
+                  << " | Issued count: " << it.issuedCount
+                  << " | Active loans: " << it.activeLoans
+                  << "\n";
+    }
+}
+
+void showDebtorsReportInteractive(const ReportSystem& rs) {
+    const auto items = rs.getDebtors(0.01);
+    if (items.empty()) {
+        std::cout << "No debtors in report.\n";
+        return;
+    }
+    for (const auto& it : items) {
+        std::cout << "Reader ID: " << it.readerId
+                  << " | Name: " << it.fullName
+                  << " | Contact: " << it.contact
+                  << " | Total fine: " << it.totalFine
+                  << "\n";
+    }
+}
+
+void showTurnoverReportInteractive(const ReportSystem& rs) {
+    const TurnoverReport r = rs.getTurnoverReport();
+    std::cout << "Total loans: " << r.totalLoans << "\n";
+    std::cout << "Active loans: " << r.activeLoans << "\n";
+    std::cout << "Returned loans: " << r.returnedLoans << "\n";
+    std::cout << "Unique books issued: " << r.uniqueBooksIssued << "\n";
+    std::cout << "Unique readers served: " << r.uniqueReadersServed << "\n";
+    std::cout << "Total collected fines: " << r.totalCollectedFines << "\n";
+}
+
 int main() {
     std::setlocale(LC_ALL, "");
 
@@ -417,6 +455,7 @@ int main() {
     library.attachCatalog(&catalog);
     ReservationSystem reservationSystem(library);
     FineSystem fineSystem(library);
+    ReportSystem reportSystem(library);
 
     while (true) {
         std::cout << "\n=== Library menu ===\n";
@@ -436,6 +475,9 @@ int main() {
         std::cout << "14 - List debtors\n";
         std::cout << "15 - Show total debt\n";
         std::cout << "16 - Pay reader debt\n";
+        std::cout << "17 - Report: Popular books\n";
+        std::cout << "18 - Report: Debtors\n";
+        std::cout << "19 - Report: Turnover\n";
         std::cout << "0 - Exit\n";
         std::cout << "Your choice: ";
 
@@ -496,6 +538,15 @@ int main() {
         case 16:
             payDebtInteractive(fineSystem);
             break;
+        case 17:
+            showPopularBooksReportInteractive(reportSystem);
+            break;
+        case 18:
+            showDebtorsReportInteractive(reportSystem);
+            break;
+        case 19:
+            showTurnoverReportInteractive(reportSystem);
+            break;
         case 0:
             saveBooksToCsv("base.csv", library.books);
             std::cout << "Exit.\n";
@@ -509,4 +560,6 @@ int main() {
     saveBooksToCsv("base.csv", library.books);
     return 0;
 }
+
+
 
