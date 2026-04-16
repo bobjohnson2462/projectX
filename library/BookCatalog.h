@@ -11,10 +11,7 @@ public:
     explicit BookCatalog(std::vector<Book>& books)
         : books_(books) {}
 
-    // Adds a new book to the catalog.
-    // If a book with the same (author, title, year, genre) already exists � increases number of copies.
-    // Forbidden: zero or negative number of copies.
-    // Returns the book id (existing or new). On error returns -1.
+  
     int addOrMergeBook(const std::string& author,
                        const std::string& title,
                        int year,
@@ -86,7 +83,6 @@ private:
         if (sub.empty()) return true;
         if (!ignoreCaseAscii) return text.find(sub) != std::string::npos;
 
-        // Note: works reliably for Latin/ASCII; for Cyrillic it's better to use the same case in input.
         const std::string t = toLowerAscii(text);
         const std::string s = toLowerAscii(sub);
         return t.find(s) != std::string::npos;
